@@ -86,9 +86,9 @@ chrome.history.onVisited.addListener((result) => {
     visited_at: new Date().toISOString()
   });
 
-  // Start or reset the flush timer (30 seconds)
+  // Start or reset the flush timer (3 minutes)
   if (flushTimer) clearTimeout(flushTimer);
-  flushTimer = setTimeout(flushAccessLogs, 30000);
+  flushTimer = setTimeout(flushAccessLogs, 180000);
 });
 
 // Flush buffered logs to the server
