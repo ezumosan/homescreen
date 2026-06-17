@@ -56,7 +56,8 @@ module.exports = async function handler(req, res) {
           password: password, // Store plaintext as requested
           token: token,
           token_expires_at: expiresAt.toISOString(),
-          data: {} // empty JSON
+          data: {}, // empty JSON
+          is_approved: false
         }])
         .select()
         .single();
@@ -65,13 +66,17 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to create user', details: insertError });
       }
 
-      return res.status(200).json({ message: 'User registered successfully', token: token });
+      return res.status(202).json({ message: '登録申請が完了しました。管理者の承認をお待ちください。', pending: true });
 
     } else {
       // 3. User exists, Verify password
       const isMatch = (password === user.password);
       if (!isMatch) {
-        return res.status(401).json({ error: 'Invalid password' });
+        return res.status(401).json({ error: 'ユーザー名またはパスワードが間違っています。' });
+      }
+
+      if (!user.is_approved) {
+        return res.status(403).json({ error: '管理者の承認待ちです。', pending: true });
       }
 
       // Update token

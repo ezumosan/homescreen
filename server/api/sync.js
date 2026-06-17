@@ -39,6 +39,10 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    if (!user.is_approved) {
+      return res.status(403).json({ error: '管理者の承認待ちです。' });
+    }
+
     // 3. Check expiration
     const now = new Date();
     const expiresAt = new Date(user.token_expires_at);

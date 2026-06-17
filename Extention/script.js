@@ -1440,6 +1440,7 @@
   // ============================================================
   //  CLOUD SYNC UI & LOGIC
   // ============================================================
+  const authOverlay = document.getElementById('authOverlay');
   const syncLoginSection = document.getElementById('syncLoginSection');
   const syncActiveSection = document.getElementById('syncActiveSection');
   const syncUsernameInput = document.getElementById('syncUsername');
@@ -1449,23 +1450,29 @@
   const btnSyncLogout = document.getElementById('btnSyncLogout');
   const syncErrorMsg = document.getElementById('syncErrorMsg');
   const syncStatusMsg = document.getElementById('syncStatusMsg');
+  
+  const btnSyncPush = document.getElementById('btnSyncPush');
+  const btnSyncPull = document.getElementById('btnSyncPull');
+  const syncStatusMsgMain = document.getElementById('syncStatusMsgMain');
   const syncActiveUsername = document.getElementById('syncActiveUsername');
 
   function updateSyncUI() {
     if (DB.syncToken && DB.syncUsername) {
-      syncLoginSection.style.display = 'none';
-      syncActiveSection.style.display = 'block';
-      syncActiveUsername.textContent = DB.syncUsername;
-      syncErrorMsg.style.display = 'none';
+      // Logged in
+      if (authOverlay) authOverlay.style.display = 'none';
+      if (syncActiveSection) {
+        syncActiveSection.style.display = 'block';
+        if (syncActiveUsername) syncActiveUsername.textContent = DB.syncUsername;
+      }
     } else {
-      syncLoginSection.style.display = 'block';
-      syncActiveSection.style.display = 'none';
-      syncPasswordInput.value = '';
+      // Not logged in (Lock Screen)
+      if (authOverlay) authOverlay.style.display = 'flex';
+      if (syncActiveSection) syncActiveSection.style.display = 'none';
+      if (syncPasswordInput) syncPasswordInput.value = '';
+      if (syncStatusMsg) syncStatusMsg.style.display = 'none';
+      if (syncErrorMsg) syncErrorMsg.style.display = 'none';
     }
   }
-
-  const btnSyncPush = document.getElementById('btnSyncPush');
-  const btnSyncPull = document.getElementById('btnSyncPull');
 
   if (btnSyncLogin) {
     btnSyncLogin.addEventListener('click', async () => {
@@ -1474,17 +1481,45 @@
       if (!u || !p) {
         syncErrorMsg.textContent = 'ユーザー名とパスワードを入力してください';
         syncErrorMsg.style.display = 'block';
+        syncStatusMsg.style.display = 'none';
         return;
       }
       btnSyncLogin.textContent = '通信中...';
       btnSyncLogin.disabled = true;
       try {
-        await CloudSync.login(u, p);
-        updateSyncUI();
-        syncStatusMsg.textContent = 'ログインしました。';
+        const res = await fetch(`${SYNC_API_URL}/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        
+        if (res.status === 202 || (res.status === 403 && data.pending)) {
+          // Waiting for approval
+          syncStatusMsg.textContent = data.message || data.error;
+          syncStatusMsg.style.display = 'block';
+          syncErrorMsg.style.display = 'none';
+        } else if (!res.ok) {
+          throw new Error(data.error || 'Login failed');
+        } else {
+          // Success
+          DB.syncToken = data.token;
+          DB.syncUsername = u;
+          updateSyncUI();
+          
+          // Initial pull to fetch data approved by admin
+          syncStatusMsgMain.textContent = '初回データを取得中...';
+          const updated = await CloudSync.pull();
+          if (updated) {
+            location.reload();
+          } else {
+            syncStatusMsgMain.textContent = 'ログインしました！(初回)';
+          }
+        }
       } catch (err) {
         syncErrorMsg.textContent = err.message;
         syncErrorMsg.style.display = 'block';
+        syncStatusMsg.style.display = 'none';
       } finally {
         btnSyncLogin.textContent = 'ログイン / 登録';
         btnSyncLogin.disabled = false;
@@ -1503,12 +1538,12 @@
     btnSyncPush.addEventListener('click', async () => {
       btnSyncPush.textContent = '保存中...';
       btnSyncPush.disabled = true;
-      syncStatusMsg.textContent = '';
+      syncStatusMsgMain.textContent = '';
       try {
         await CloudSync.push();
-        syncStatusMsg.textContent = '✅ クラウドに保存しました！(' + new Date().toLocaleTimeString() + ')';
+        syncStatusMsgMain.textContent = '✅ クラウドに保存しました！(' + new Date().toLocaleTimeString() + ')';
       } catch (err) {
-        syncStatusMsg.textContent = '❌ 保存失敗: ' + err.message;
+        syncStatusMsgMain.textContent = '❌ 保存失敗: ' + err.message;
       } finally {
         btnSyncPush.textContent = '↑ クラウドに保存';
         btnSyncPush.disabled = false;
@@ -1520,17 +1555,17 @@
     btnSyncPull.addEventListener('click', async () => {
       btnSyncPull.textContent = '反映中...';
       btnSyncPull.disabled = true;
-      syncStatusMsg.textContent = '';
+      syncStatusMsgMain.textContent = '';
       try {
         const updated = await CloudSync.pull();
         if (updated) {
-          syncStatusMsg.textContent = '✅ クラウドから反映しました！ページを更新します...';
+          syncStatusMsgMain.textContent = '✅ クラウドから反映しました！ページを更新します...';
           setTimeout(() => location.reload(), 1000);
         } else {
-          syncStatusMsg.textContent = 'クラウド上にデータがありません。';
+          syncStatusMsgMain.textContent = 'クラウド上にデータがありません。';
         }
       } catch (err) {
-        syncStatusMsg.textContent = '❌ 反映失敗: ' + err.message;
+        syncStatusMsgMain.textContent = '❌ 反映失敗: ' + err.message;
       } finally {
         btnSyncPull.textContent = '↓ クラウドから反映';
         btnSyncPull.disabled = false;

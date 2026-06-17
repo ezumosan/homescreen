@@ -11,6 +11,24 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- ===== Full Screen Auth Overlay ===== -->
+  <div id="authOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
+    <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; text-align: center;">
+      <h2 style="margin-bottom: 0.5rem; color: var(--color-I);">Homescreen Login</h2>
+      <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 1.5rem;">
+        ご利用にはサインアップと管理者の承認が必要です。
+      </p>
+      
+      <div id="syncLoginSection">
+        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-family: inherit; font-size: 1rem;">
+        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-family: inherit; font-size: 1rem;">
+        <button id="btnSyncLogin" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s; font-size: 1rem;">ログイン / 登録</button>
+        <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
+        <p id="syncStatusMsg" style="color: #34d399; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
+      </div>
+    </div>
+  </div>
+
   <video id="bgVideo" autoplay loop muted playsinline style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:-1;"></video>
   <!-- Settings Button -->
   <button class="settings-btn" id="settingsBtn" title="設定">
@@ -219,19 +237,8 @@
       </select>
       
       <hr style="border-color: var(--border-glass); margin: 1.5rem 0;">
-      <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウドバックアップ (Vercel + Supabase)</h3>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-        ユーザー名とパスワードを入力してログインすると、現在の設定や時間割をクラウドに「アップロード」したり、他のPCで「反映（ダウンロード）」できます。（有効期限: 1週間）
-      </p>
-      
-      <div id="syncLoginSection">
-        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 0.5rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-        <button id="btnSyncLogin" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s;">ログイン / 登録</button>
-        <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
-      </div>
-      
-      <div id="syncActiveSection" style="display: none; background: rgba(110,198,255,0.1); border: 1px solid rgba(110,198,255,0.3); padding: 1rem; border-radius: 8px;">
+      <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウドバックアップ</h3>
+      <div id="syncActiveSection" style="background: rgba(110,198,255,0.1); border: 1px solid rgba(110,198,255,0.3); padding: 1rem; border-radius: 8px;">
         <p style="font-size: 0.9rem; color: #6ec6ff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
           <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#6ec6ff;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           ログイン中 (<span id="syncActiveUsername" style="font-weight: bold;"></span>)
@@ -241,7 +248,7 @@
           <button id="btnSyncPull" style="flex: 1 1 45%; padding: 0.5rem; border-radius: 6px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; cursor: pointer; transition: background 0.2s;">↓ クラウドから反映</button>
           <button id="btnSyncLogout" style="flex: 1 1 100%; padding: 0.5rem; border-radius: 6px; background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); color: #ff8888; cursor: pointer; transition: background 0.2s; margin-top: 0.3rem;">ログアウト</button>
         </div>
-        <p id="syncStatusMsg" style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);"></p>
+        <p id="syncStatusMsgMain" style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);"></p>
       </div>
       
       <div class="modal-actions">
