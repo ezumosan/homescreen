@@ -522,7 +522,8 @@
       transition:all 0.2s ease;position:relative;cursor:pointer;overflow:hidden;
     }
     .cal-day:hover { background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1); }
-    .cal-day.other-month { opacity:0.3; }
+    .cal-day.other-month .cal-day-num { opacity:0.4; }
+    .cal-day.other-month .cal-test-tag { opacity:0.6; }
     .cal-day.today { border-color:rgba(110,198,255,0.4);background:rgba(110,198,255,0.06); }
     .cal-day-num {
       font-size:clamp(0.5rem, 2vmin, 0.85rem);font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem;
