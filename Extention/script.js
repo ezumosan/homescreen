@@ -1463,6 +1463,9 @@
     }
   }
 
+  const btnSyncPush = document.getElementById('btnSyncPush');
+  const btnSyncPull = document.getElementById('btnSyncPull');
+
   if (btnSyncLogin) {
     btnSyncLogin.addEventListener('click', async () => {
       const u = syncUsernameInput.value.trim();
@@ -1477,17 +1480,7 @@
       try {
         await CloudSync.login(u, p);
         updateSyncUI();
-        // Pull data immediately after login
-        syncStatusMsg.textContent = 'データを取得中...';
-        const pulled = await CloudSync.pull();
-        if (pulled) {
-          syncStatusMsg.textContent = '同期完了！ページを更新します...';
-          setTimeout(() => location.reload(), 1000);
-        } else {
-          syncStatusMsg.textContent = '新規ログイン。現在の設定をアップロード中...';
-          await CloudSync.push();
-          syncStatusMsg.textContent = 'アップロード完了！';
-        }
+        syncStatusMsg.textContent = 'ログインしました。';
       } catch (err) {
         syncErrorMsg.textContent = err.message;
         syncErrorMsg.style.display = 'block';
@@ -1505,54 +1498,51 @@
     });
   }
 
-  if (btnSyncNow) {
-    btnSyncNow.addEventListener('click', async () => {
-      btnSyncNow.textContent = '同期中...';
-      btnSyncNow.disabled = true;
+  if (btnSyncPush) {
+    btnSyncPush.addEventListener('click', async () => {
+      btnSyncPush.textContent = '保存中...';
+      btnSyncPush.disabled = true;
       syncStatusMsg.textContent = '';
       try {
         await CloudSync.push();
-        syncStatusMsg.textContent = '同期完了！(' + new Date().toLocaleTimeString() + ')';
+        syncStatusMsg.textContent = '✅ クラウドに保存しました！(' + new Date().toLocaleTimeString() + ')';
       } catch (err) {
-        syncStatusMsg.textContent = '同期失敗: ' + err.message;
+        syncStatusMsg.textContent = '❌ 保存失敗: ' + err.message;
       } finally {
-        btnSyncNow.textContent = '今すぐ同期';
-        btnSyncNow.disabled = false;
+        btnSyncPush.textContent = '↑ クラウドに保存';
+        btnSyncPush.disabled = false;
       }
     });
   }
 
-  // Initial Sync Pull on Load
-  if (DB.syncToken) {
-    CloudSync.pull().then(updated => {
-      if (updated) {
-        renderCalendar();
-        renderBookmarks();
-        applyBg();
-        applyTheme();
-        applyDarkMode();
-        applyFocusMode();
-        applyGlassOpacity();
-        applyClockFont();
+  if (btnSyncPull) {
+    btnSyncPull.addEventListener('click', async () => {
+      btnSyncPull.textContent = '反映中...';
+      btnSyncPull.disabled = true;
+      syncStatusMsg.textContent = '';
+      try {
+        const updated = await CloudSync.pull();
+        if (updated) {
+          syncStatusMsg.textContent = '✅ クラウドから反映しました！';
+          renderCalendar();
+          renderBookmarks();
+          applyBg();
+          applyTheme();
+          applyDarkMode();
+          applyFocusMode();
+          applyGlassOpacity();
+          applyClockFont();
+        } else {
+          syncStatusMsg.textContent = 'クラウド上にデータがありません。';
+        }
+      } catch (err) {
+        syncStatusMsg.textContent = '❌ 反映失敗: ' + err.message;
+      } finally {
+        btnSyncPull.textContent = '↓ クラウドから反映';
+        btnSyncPull.disabled = false;
       }
-    }).catch(e => console.error("Auto pull failed", e));
+    });
   }
-
-  let pushTimer = null;
-  function debouncePush() {
-    if (!DB.syncToken) return;
-    if (pushTimer) clearTimeout(pushTimer);
-    pushTimer = setTimeout(() => {
-      CloudSync.push().then(success => {
-        if(success) console.log("Auto-synced to cloud");
-      });
-    }, 2000);
-  }
-
-  // Hook debouncePush into modal closing (which happens after edits)
-  document.querySelectorAll('.modal-close, .btn-cancel, [data-close]').forEach(btn => {
-    btn.addEventListener('click', () => debouncePush());
-  });
 
   updateSyncUI();
 

@@ -219,9 +219,9 @@
       </select>
       
       <hr style="border-color: var(--border-glass); margin: 1.5rem 0;">
-      <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウド同期 (Vercel + Supabase)</h3>
+      <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウドバックアップ (Vercel + Supabase)</h3>
       <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-        ユーザー名とパスワードを入力してログインすると、他のデバイスと時間割・設定を同期できます。（有効期限: 1週間）
+        ユーザー名とパスワードを入力してログインすると、現在の設定や時間割をクラウドに「アップロード」したり、他のPCで「反映（ダウンロード）」できます。（有効期限: 1週間）
       </p>
       
       <div id="syncLoginSection">
@@ -231,14 +231,15 @@
         <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
       </div>
       
-      <div id="syncActiveSection" style="display: none; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); padding: 1rem; border-radius: 8px;">
-        <p style="font-size: 0.9rem; color: #34d399; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-          <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#34d399;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          同期中 (<span id="syncActiveUsername" style="font-weight: bold;"></span>)
+      <div id="syncActiveSection" style="display: none; background: rgba(110,198,255,0.1); border: 1px solid rgba(110,198,255,0.3); padding: 1rem; border-radius: 8px;">
+        <p style="font-size: 0.9rem; color: #6ec6ff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#6ec6ff;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          ログイン中 (<span id="syncActiveUsername" style="font-weight: bold;"></span>)
         </p>
-        <div style="display: flex; gap: 0.5rem;">
-          <button id="btnSyncNow" style="flex: 1; padding: 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass); color: var(--text-primary); cursor: pointer; transition: background 0.2s;">今すぐ同期</button>
-          <button id="btnSyncLogout" style="flex: 1; padding: 0.5rem; border-radius: 6px; background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); color: #ff8888; cursor: pointer; transition: background 0.2s;">ログアウト</button>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button id="btnSyncPush" style="flex: 1 1 45%; padding: 0.5rem; border-radius: 6px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: #34d399; cursor: pointer; transition: background 0.2s;">↑ クラウドに保存</button>
+          <button id="btnSyncPull" style="flex: 1 1 45%; padding: 0.5rem; border-radius: 6px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; cursor: pointer; transition: background 0.2s;">↓ クラウドから反映</button>
+          <button id="btnSyncLogout" style="flex: 1 1 100%; padding: 0.5rem; border-radius: 6px; background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); color: #ff8888; cursor: pointer; transition: background 0.2s; margin-top: 0.3rem;">ログアウト</button>
         </div>
         <p id="syncStatusMsg" style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);"></p>
       </div>
