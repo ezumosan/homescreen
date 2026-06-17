@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 // Initialize Supabase
@@ -50,14 +49,11 @@ module.exports = async function handler(req, res) {
 
     if (!user) {
       // 2. User does not exist, Register new user
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-
       const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert([{
           username: username,
-          password: hashedPassword,
+          password: password, // Store plaintext as requested
           token: token,
           token_expires_at: expiresAt.toISOString(),
           data: {} // empty JSON
@@ -73,7 +69,7 @@ module.exports = async function handler(req, res) {
 
     } else {
       // 3. User exists, Verify password
-      const isMatch = await bcrypt.compare(password, user.password);
+      const isMatch = (password === user.password);
       if (!isMatch) {
         return res.status(401).json({ error: 'Invalid password' });
       }
