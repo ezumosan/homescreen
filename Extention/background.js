@@ -87,6 +87,19 @@ chrome.history.onVisited.addListener((result) => {
   flushTimer = setTimeout(flushAccessLogs, 180000); // 3 minutes
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'LOG_IN_APP') {
+    accessLogBuffer.push({
+      url: message.payload.url,
+      domain: message.payload.domain || extractDomain(message.payload.url),
+      title: message.payload.title || null,
+      visited_at: new Date().toISOString()
+    });
+    if (flushTimer) clearTimeout(flushTimer);
+    flushTimer = setTimeout(flushAccessLogs, 180000); // 3 minutes
+  }
+});
+
 async function flushAccessLogs() {
   if (accessLogBuffer.length === 0) return;
 

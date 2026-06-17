@@ -299,9 +299,6 @@
   //  ACCESS LOG TRACKING (In-App)
   // ============================================================
   const AccessLogger = {
-    buffer: [],
-    flushTimer: null,
-    
     extractDomain(urlStr) {
       if (urlStr.startsWith('search:')) return 'google.com';
       try {
@@ -315,43 +312,11 @@
     log(url, title = null) {
       if (!DB.syncToken) return; // Only log if logged in
       
-      this.buffer.push({
-        url: url,
-        domain: this.extractDomain(url),
-        title: title,
-        visited_at: new Date().toISOString(),
-        device_id: DB.deviceId,
-        user_agent: navigator.userAgent,
-        screen_resolution: `${window.screen.width}x${window.screen.height}`
-      });
-      
-      if (this.flushTimer) clearTimeout(this.flushTimer);
-      this.flushTimer = setTimeout(() => this.flush(), 180000); // 3 minutes
-    },
-    
-    async flush() {
-      if (this.buffer.length === 0 || !DB.syncToken) return;
-      
-      const logsToSend = [...this.buffer];
-      this.buffer = [];
-      
-      try {
-        const res = await fetch(`${SYNC_API_URL}/access-logs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DB.syncToken}`
-          },
-          body: JSON.stringify({ logs: logsToSend })
+      if (chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: 'LOG_IN_APP',
+          payload: { url: url, domain: this.extractDomain(url), title: title }
         });
-        
-        if (!res.ok) {
-          // Push back on failure (up to 1000)
-          this.buffer = [...logsToSend, ...this.buffer].slice(0, 1000);
-        }
-      } catch (err) {
-        console.error("Access log push error:", err);
-        this.buffer = [...logsToSend, ...this.buffer].slice(0, 1000);
       }
     }
   };
