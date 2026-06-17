@@ -1411,11 +1411,12 @@
     return IDB.getBg();
   }).then(bgData => {
     if (bgData) {
-      if (bgData.type.startsWith('video/')) {
-        currentBgUrl = URL.createObjectURL(bgData.data);
+      const fileBlob = bgData.data || bgData;
+      if (bgData.type && bgData.type.startsWith('video/')) {
+        currentBgUrl = URL.createObjectURL(fileBlob);
         DB.bg = 'video:' + currentBgUrl; // Flag to applyBg that it's a video
       } else {
-        currentBgUrl = URL.createObjectURL(bgData.data);
+        currentBgUrl = URL.createObjectURL(fileBlob);
         DB.bg = currentBgUrl;
       }
     }
