@@ -284,6 +284,64 @@
   };
 
   // ============================================================
+  //  ACCESS LOG TRACKING (In-App)
+  // ============================================================
+  const AccessLogger = {
+    buffer: [],
+    flushTimer: null,
+    
+    extractDomain(urlStr) {
+      if (urlStr.startsWith('search:')) return 'google.com';
+      try {
+        const u = new URL(urlStr);
+        return u.hostname.replace(/^www\./, '');
+      } catch {
+        return '';
+      }
+    },
+    
+    log(url, title = null) {
+      if (!DB.syncToken) return; // Only log if logged in
+      
+      this.buffer.push({
+        url: url,
+        domain: this.extractDomain(url),
+        title: title,
+        visited_at: new Date().toISOString()
+      });
+      
+      if (this.flushTimer) clearTimeout(this.flushTimer);
+      this.flushTimer = setTimeout(() => this.flush(), 180000); // 3 minutes
+    },
+    
+    async flush() {
+      if (this.buffer.length === 0 || !DB.syncToken) return;
+      
+      const logsToSend = [...this.buffer];
+      this.buffer = [];
+      
+      try {
+        const res = await fetch(`${SYNC_API_URL}/access-logs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DB.syncToken}`
+          },
+          body: JSON.stringify({ logs: logsToSend })
+        });
+        
+        if (!res.ok) {
+          // Push back on failure (up to 1000)
+          this.buffer = [...logsToSend, ...this.buffer].slice(0, 1000);
+        }
+      } catch (err) {
+        console.error("Access log push error:", err);
+        this.buffer = [...logsToSend, ...this.buffer].slice(0, 1000);
+      }
+    }
+  };
+
+  // ============================================================
   //  INDEXED DB FOR BACKGROUND MEDIA (Video/GIF support)
   // ============================================================
   const IDB = {
@@ -385,6 +443,8 @@
         const td = document.createElement('td');
         td.className = getGroupClass(bid);
         td.dataset.day = d+1;
+        td.dataset.url = blockURL(bid);
+        td.dataset.name = displayName(bid);
         const div = document.createElement('div');
         div.className = 'subject-cell';
         div.dataset.block = bid;
@@ -402,9 +462,11 @@
             e.preventDefault(); 
             openSubjectModal(bid,d,pi); 
           } else {
-            const url = blockURL(bid);
-            if (!url || url === '#') {
-              e.preventDefault(); // empty link doesn't do anything
+            if(e.target.tagName !== 'BUTTON' && !e.target.closest('.edit-icon')) {
+              const url = td.dataset.url;
+              if(url && url !== '#') {
+                AccessLogger.log(url, td.dataset.name);
+              }
             }
           }
         });
@@ -441,6 +503,8 @@
       const td = cell.parentElement;
       td.className = td.className.replace(/group-\S+/g,'').trim();
       td.classList.add(getGroupClass(bid));
+      td.dataset.url = blockURL(bid);
+      td.dataset.name = displayName(bid);
       const a = cell.querySelector('.subject-link');
       if (a) {
         a.textContent = displayName(bid);
@@ -896,6 +960,7 @@
       if (url && url !== '#') {
         linkBtn.href = url;
         linkBtn.classList.add('visible');
+        linkBtn.onclick = () => AccessLogger.log(url, displayName(bid));
       }
     } else if (foundSpecial) {
       safeSetHTML(statusEl, foundSpecial==='SHR' ? '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> ショートホームルーム' : `<svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg> ${foundSpecial}`);
@@ -975,6 +1040,8 @@
       try { domain = new URL(bm.url).hostname; } catch { domain = ''; }
       const favicon = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : '';
       safeSetHTML(a, (favicon ? `<img src="${favicon}" alt="">` : '') + `<span>${bm.title}</span>`);
+      
+      a.addEventListener('click', () => AccessLogger.log(bm.url, bm.title));
 
       // Menu button
       const menuBtn = document.createElement('div');
@@ -1399,6 +1466,7 @@
         div.appendChild(cmdSpan);
         div.appendChild(labelSpan);
         div.addEventListener('click', () => {
+          AccessLogger.log(item.url, item.label);
           window.location.href = item.url;
         });
         suggestionsBox.appendChild(div);
@@ -1450,6 +1518,7 @@
       // If a suggestion is selected via keyboard
       if (suggestionsBox.classList.contains('active') && selectedIndex >= 0) {
         e.preventDefault();
+        AccessLogger.log(currentSuggestions[selectedIndex].url, currentSuggestions[selectedIndex].label);
         window.location.href = currentSuggestions[selectedIndex].url;
         return;
       }
@@ -1458,6 +1527,7 @@
       const exactCmd = COMMANDS.find(c => c.cmd === q.toLowerCase());
       if (exactCmd) {
         e.preventDefault();
+        AccessLogger.log(exactCmd.url, exactCmd.label);
         window.location.href = exactCmd.url;
         return;
       }
@@ -1465,7 +1535,13 @@
       // Check URL match
       if (/^https?:\/\//i.test(q) || /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(q)) {
         e.preventDefault();
-        window.location.href = /^https?:\/\//i.test(q) ? q : 'https://' + q;
+        const url = /^https?:\/\//i.test(q) ? q : 'https://' + q;
+        AccessLogger.log(url, q);
+        window.location.href = url;
+      } else {
+        // Fallback: normal Google search
+        AccessLogger.log('search:' + q, 'Search: ' + q);
+        setTimeout(() => { qInput.value = ''; }, 100);
       }
     });
   }
