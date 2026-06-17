@@ -1464,90 +1464,109 @@
   // ============================================================
   //  CLOUD SYNC UI & LOGIC
   // ============================================================
-  const authOverlay = document.getElementById('authOverlay');
   const syncLoginSection = document.getElementById('syncLoginSection');
   const syncActiveSection = document.getElementById('syncActiveSection');
   const syncUsernameInput = document.getElementById('syncUsername');
   const syncPasswordInput = document.getElementById('syncPassword');
   const btnSyncLogin = document.getElementById('btnSyncLogin');
-  const btnSyncNow = document.getElementById('btnSyncNow');
-  const btnSyncLogout = document.getElementById('btnSyncLogout');
   const syncErrorMsg = document.getElementById('syncErrorMsg');
   const syncStatusMsg = document.getElementById('syncStatusMsg');
+  const syncStatusMsgMain = document.getElementById('syncStatusMsgMain');
   
   const btnSyncPush = document.getElementById('btnSyncPush');
   const btnSyncPull = document.getElementById('btnSyncPull');
-  const syncStatusMsgMain = document.getElementById('syncStatusMsgMain');
+  const btnSyncLogout = document.getElementById('btnSyncLogout');
   const syncActiveUsername = document.getElementById('syncActiveUsername');
+
+  // Calendar specific Auth UI
+  const calendarAuthOverlay = document.getElementById('calendarAuthOverlay');
+  const calendarMainContent = document.getElementById('calendarMainContent');
+  const calSyncUsernameInput = document.getElementById('calSyncUsername');
+  const calSyncPasswordInput = document.getElementById('calSyncPassword');
+  const btnCalSyncLogin = document.getElementById('btnCalSyncLogin');
+  const calSyncErrorMsg = document.getElementById('calSyncErrorMsg');
+  const calSyncStatusMsg = document.getElementById('calSyncStatusMsg');
 
   function updateSyncUI() {
     if (DB.syncToken && DB.syncUsername) {
       // Logged in
-      if (authOverlay) authOverlay.style.display = 'none';
+      if (syncLoginSection) syncLoginSection.style.display = 'none';
       if (syncActiveSection) {
         syncActiveSection.style.display = 'block';
         if (syncActiveUsername) syncActiveUsername.textContent = DB.syncUsername;
       }
-    } else {
-      // Not logged in (Lock Screen)
-      if (authOverlay) authOverlay.style.display = 'flex';
-      if (syncActiveSection) syncActiveSection.style.display = 'none';
-      if (syncPasswordInput) syncPasswordInput.value = '';
+      if (calendarAuthOverlay) calendarAuthOverlay.style.display = 'none';
+      if (calendarMainContent) calendarMainContent.style.display = 'block';
       if (syncStatusMsg) syncStatusMsg.style.display = 'none';
       if (syncErrorMsg) syncErrorMsg.style.display = 'none';
+      if (calSyncStatusMsg) calSyncStatusMsg.style.display = 'none';
+      if (calSyncErrorMsg) calSyncErrorMsg.style.display = 'none';
+    } else {
+      // Not logged in
+      if (syncLoginSection) syncLoginSection.style.display = 'block';
+      if (syncActiveSection) syncActiveSection.style.display = 'none';
+      if (syncPasswordInput) syncPasswordInput.value = '';
+      if (calendarAuthOverlay) calendarAuthOverlay.style.display = 'flex';
+      if (calendarMainContent) calendarMainContent.style.display = 'none';
+      if (calSyncPasswordInput) calSyncPasswordInput.value = '';
+    }
+  }
+
+  async function handleLogin(username, password, btn, statusEl, errorEl) {
+    if (!username || !password) {
+      errorEl.textContent = 'ユーザー名とパスワードを入力してください';
+      errorEl.style.display = 'block';
+      statusEl.style.display = 'none';
+      return;
+    }
+    btn.textContent = '通信中...';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${SYNC_API_URL}/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      
+      if (res.status === 202 || (res.status === 403 && data.pending)) {
+        statusEl.textContent = data.message || data.error;
+        statusEl.style.display = 'block';
+        errorEl.style.display = 'none';
+      } else if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      } else {
+        DB.syncToken = data.token;
+        DB.syncUsername = username;
+        updateSyncUI();
+        
+        syncStatusMsgMain.textContent = '初回データを取得中...';
+        const updated = await CloudSync.pull();
+        if (updated) {
+          location.reload();
+        } else {
+          syncStatusMsgMain.textContent = 'ログインしました！(初回)';
+        }
+      }
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+      statusEl.style.display = 'none';
+    } finally {
+      btn.textContent = 'ログイン / 登録';
+      btn.disabled = false;
     }
   }
 
   if (btnSyncLogin) {
-    btnSyncLogin.addEventListener('click', async () => {
-      const u = syncUsernameInput.value.trim();
-      const p = syncPasswordInput.value;
-      if (!u || !p) {
-        syncErrorMsg.textContent = 'ユーザー名とパスワードを入力してください';
-        syncErrorMsg.style.display = 'block';
-        syncStatusMsg.style.display = 'none';
-        return;
-      }
-      btnSyncLogin.textContent = '通信中...';
-      btnSyncLogin.disabled = true;
-      try {
-        const res = await fetch(`${SYNC_API_URL}/auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p })
-        });
-        const data = await res.json();
-        
-        if (res.status === 202 || (res.status === 403 && data.pending)) {
-          // Waiting for approval
-          syncStatusMsg.textContent = data.message || data.error;
-          syncStatusMsg.style.display = 'block';
-          syncErrorMsg.style.display = 'none';
-        } else if (!res.ok) {
-          throw new Error(data.error || 'Login failed');
-        } else {
-          // Success
-          DB.syncToken = data.token;
-          DB.syncUsername = u;
-          updateSyncUI();
-          
-          // Initial pull to fetch data approved by admin
-          syncStatusMsgMain.textContent = '初回データを取得中...';
-          const updated = await CloudSync.pull();
-          if (updated) {
-            location.reload();
-          } else {
-            syncStatusMsgMain.textContent = 'ログインしました！(初回)';
-          }
-        }
-      } catch (err) {
-        syncErrorMsg.textContent = err.message;
-        syncErrorMsg.style.display = 'block';
-        syncStatusMsg.style.display = 'none';
-      } finally {
-        btnSyncLogin.textContent = 'ログイン / 登録';
-        btnSyncLogin.disabled = false;
-      }
+    btnSyncLogin.addEventListener('click', () => {
+      handleLogin(syncUsernameInput.value.trim(), syncPasswordInput.value, btnSyncLogin, syncStatusMsg, syncErrorMsg);
+    });
+  }
+
+  if (btnCalSyncLogin) {
+    btnCalSyncLogin.addEventListener('click', () => {
+      handleLogin(calSyncUsernameInput.value.trim(), calSyncPasswordInput.value, btnCalSyncLogin, calSyncStatusMsg, calSyncErrorMsg);
     });
   }
 

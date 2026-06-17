@@ -11,24 +11,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- ===== Full Screen Auth Overlay ===== -->
-  <div id="authOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
-    <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; text-align: center;">
-      <h2 style="margin-bottom: 0.5rem; color: var(--color-I);">Homescreen Login</h2>
-      <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 1.5rem;">
-        ご利用にはサインアップと管理者の承認が必要です。
-      </p>
-      
-      <div id="syncLoginSection">
-        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-family: inherit; font-size: 1rem;">
-        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-family: inherit; font-size: 1rem;">
-        <button id="btnSyncLogin" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s; font-size: 1rem;">ログイン / 登録</button>
-        <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
-        <p id="syncStatusMsg" style="color: #34d399; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
-      </div>
-    </div>
-  </div>
-
   <video id="bgVideo" autoplay loop muted playsinline style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:-1;"></video>
   <!-- Settings Button -->
   <button class="settings-btn" id="settingsBtn" title="設定">
@@ -107,19 +89,36 @@
 
     <!-- ===== TAB 2: Calendar ===== -->
     <div class="tab-content" id="tab-calendar">
-      <div class="calendar-header">
-        <button class="cal-nav-btn" id="calPrev"><svg class="svg-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg> 前月</button>
-        <h2 id="calTitle"></h2>
-        <button class="cal-nav-btn" id="calNext">次月 <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+      <div id="calendarAuthOverlay" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; text-align: center;">
+        <div style="background: var(--glass-bg); border: 1px solid var(--border-glass); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; backdrop-filter: blur(10px);">
+          <h2 style="margin-bottom: 0.5rem; color: var(--color-I);">テスト日程</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+            この機能を利用するには、サインアップと管理者の承認が必要です。
+          </p>
+          <div id="calSyncLoginSection">
+            <input type="text" id="calSyncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-size: 1rem;">
+            <input type="password" id="calSyncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-size: 1rem;">
+            <button id="btnCalSyncLogin" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s; font-size: 1rem;">ログイン / 登録</button>
+            <p id="calSyncErrorMsg" style="color: #ff8888; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
+            <p id="calSyncStatusMsg" style="color: #34d399; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
+          </div>
+        </div>
       </div>
-      <div class="calendar-grid-wrapper">
-        <div class="calendar-grid" id="calendarGrid"></div>
-      </div>
-      <div class="upcoming-tests">
-        <h3>
-          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> 今後のテスト
-        </h3>
-        <div class="test-list" id="testList"></div>
+      <div id="calendarMainContent">
+        <div class="calendar-header">
+          <button class="cal-nav-btn" id="calPrev"><svg class="svg-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg> 前月</button>
+          <h2 id="calTitle"></h2>
+          <button class="cal-nav-btn" id="calNext">次月 <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+        <div class="calendar-grid-wrapper">
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+        <div class="upcoming-tests">
+          <h3>
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> 今後のテスト
+          </h3>
+          <div class="test-list" id="testList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -238,7 +237,19 @@
       
       <hr style="border-color: var(--border-glass); margin: 1.5rem 0;">
       <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウドバックアップ</h3>
-      <div id="syncActiveSection" style="background: rgba(110,198,255,0.1); border: 1px solid rgba(110,198,255,0.3); padding: 1rem; border-radius: 8px;">
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        ユーザー名とパスワードを入力してログインすると、他のPCで「反映（ダウンロード）」できます。
+      </p>
+
+      <div id="syncLoginSection">
+        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 0.5rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+        <button id="btnSyncLogin" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s;">ログイン / 登録</button>
+        <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
+        <p id="syncStatusMsg" style="color: #34d399; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
+      </div>
+
+      <div id="syncActiveSection" style="display: none; background: rgba(110,198,255,0.1); border: 1px solid rgba(110,198,255,0.3); padding: 1rem; border-radius: 8px;">
         <p style="font-size: 0.9rem; color: #6ec6ff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
           <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#6ec6ff;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           ログイン中 (<span id="syncActiveUsername" style="font-weight: bold;"></span>)
