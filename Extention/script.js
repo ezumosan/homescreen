@@ -1524,15 +1524,8 @@
       try {
         const updated = await CloudSync.pull();
         if (updated) {
-          syncStatusMsg.textContent = '✅ クラウドから反映しました！';
-          renderCalendar();
-          renderBookmarks();
-          applyBg();
-          applyTheme();
-          applyDarkMode();
-          applyFocusMode();
-          applyGlassOpacity();
-          applyClockFont();
+          syncStatusMsg.textContent = '✅ クラウドから反映しました！ページを更新します...';
+          setTimeout(() => location.reload(), 1000);
         } else {
           syncStatusMsg.textContent = 'クラウド上にデータがありません。';
         }
