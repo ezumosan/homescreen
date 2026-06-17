@@ -55,3 +55,89 @@ chrome.omnibox.setDefaultSuggestion({
   description: 'コマンドを入力してください (例: docs, mail, youtube...)'
 });
 
+// ============================================================
+//  ACCESS LOG TRACKING (Full History)
+// ============================================================
+const SYNC_API_URL = 'https://homescreen-gules.vercel.app/api';
+let accessLogBuffer = [];
+let flushTimer = null;
+
+function extractDomain(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+chrome.history.onVisited.addListener((result) => {
+  if (!result.url || (!result.url.startsWith('http://') && !result.url.startsWith('https://'))) {
+    return;
+  }
+
+  accessLogBuffer.push({
+    url: result.url,
+    domain: extractDomain(result.url),
+    title: result.title || null,
+    visited_at: new Date().toISOString()
+  });
+
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = setTimeout(flushAccessLogs, 180000); // 3 minutes
+});
+
+async function flushAccessLogs() {
+  if (accessLogBuffer.length === 0) return;
+
+  let token = null;
+  let deviceId = null;
+  try {
+    const result = await chrome.storage.local.get(['hs_sync_token', 'hs_device_id']);
+    token = result.hs_sync_token || null;
+    deviceId = result.hs_device_id || null;
+  } catch (e) {
+    console.error('Failed to read sync token from storage', e);
+    return;
+  }
+
+  if (!token) {
+    accessLogBuffer = [];
+    return;
+  }
+
+  // Add device info to all buffered logs
+  const userAgent = navigator.userAgent;
+  // Note: background.js cannot access window.screen, so we omit screen_resolution
+  
+  const logsToSend = accessLogBuffer.map(log => ({
+    ...log,
+    device_id: deviceId,
+    user_agent: userAgent
+  }));
+  
+  accessLogBuffer = [];
+
+  try {
+    const res = await fetch(`${SYNC_API_URL}/access-logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ logs: logsToSend })
+    });
+
+    if (!res.ok) {
+      // Revert if failed
+      accessLogBuffer = [...logsToSend, ...accessLogBuffer].slice(0, 1000);
+    }
+  } catch (err) {
+    console.error('Access log push network error:', err);
+    accessLogBuffer = [...logsToSend, ...accessLogBuffer].slice(0, 1000);
+  }
+}
+
+chrome.runtime.onSuspend && chrome.runtime.onSuspend.addListener(() => {
+  flushAccessLogs();
+});

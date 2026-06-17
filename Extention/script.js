@@ -77,6 +77,9 @@
         id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
         localStorage.setItem('hs_device_id', id);
       }
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ hs_device_id: id });
+      }
       return id;
     },
 
