@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ブラウザスタートページ - 時間割・テスト日程管理">
+  <title>Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <video id="bgVideo" autoplay loop muted playsinline style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:-1;"></video>
+  <!-- Settings Button -->
+  <button class="settings-btn" id="settingsBtn" title="設定">
+    <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </button>
+
+  <!-- Floating Action Button Menu -->
+  <div class="fab-container" id="fabContainer">
+    <div class="fab-menu" id="fabMenu">
+      <label class="focus-toggle-btn fab-item" id="editModeToggleContainer" title="編集モード">
+        <input type="checkbox" id="editModeSwitch">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      </label>
+      <button class="focus-toggle-btn fab-item" id="darkModeQuickToggle" title="ダークモード切替">
+        <svg class="svg-icon moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg class="svg-icon sun-icon" viewBox="0 0 24 24" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+      <button class="focus-toggle-btn fab-item" id="focusToggleBtn" title="時間割を隠す/表示">
+        <svg class="svg-icon eye-open" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <svg class="svg-icon eye-closed" viewBox="0 0 24 24" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+      </button>
+    </div>
+    <button class="focus-toggle-btn fab-main" id="fabMainBtn" title="メニューを展開">
+      <svg class="svg-icon fab-arrow" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <div class="clock" id="clock">--:--</div>
+      <div class="date-display" id="dateDisplay"></div>
+      <div class="status-row">
+        <div class="current-status" id="currentStatus">読み込み中…</div>
+        <a class="btn-open-link" id="btnOpenLink" href="#" target="_blank">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          リンクを開く
+        </a>
+      </div>
+      <form class="search-bar" action="https://www.google.com/search" method="GET" style="position: relative;">
+        <input type="text" name="q" placeholder="Google で検索..." autocomplete="off" id="searchInput" autofocus>
+        <button type="submit" title="検索">
+          <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        <div class="search-suggestions" id="searchSuggestions"></div>
+      </form>
+    </header>
+
+    <!-- ===== Bookmarks Bar ===== -->
+    <div class="bookmarks-bar" id="bookmarksBar"></div>
+
+    <!-- Tabs & Controls -->
+    <div class="controls-row">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="timetable">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> 時間割
+        </button>
+        <button class="tab-btn" data-tab="calendar">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> テスト日程
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== TAB 1: Timetable ===== -->
+    <div class="tab-content active" id="tab-timetable">
+      <div class="timetable-wrapper">
+        <table class="timetable" id="timetable">
+          <thead>
+            <tr><th>時限</th><th data-day="1">月</th><th data-day="2">火</th><th data-day="3">水</th><th data-day="4">木</th><th data-day="5">金</th></tr>
+          </thead>
+          <tbody id="timetableBody"></tbody>
+        </table>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="footer" id="timetableFooter">編集モードをオンにすると授業名やリンクを設定できます</div>
+    </div>
+
+    <!-- ===== TAB 2: Calendar ===== -->
+    <div class="tab-content" id="tab-calendar">
+      <div class="calendar-header">
+        <button class="cal-nav-btn" id="calPrev"><svg class="svg-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg> 前月</button>
+        <h2 id="calTitle"></h2>
+        <button class="cal-nav-btn" id="calNext">次月 <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+      </div>
+      <div class="calendar-grid-wrapper">
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="upcoming-tests">
+        <h3>
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> 今後のテスト
+        </h3>
+        <div class="test-list" id="testList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Edit Subject Modal ===== -->
+  <div class="modal-overlay" id="modalSubject">
+    <div class="modal">
+      <button class="modal-close" data-close="modalSubject">&times;</button>
+      <h2 id="subjModalTitle">授業を編集</h2>
+      <p class="modal-subtitle" id="subjModalSub"></p>
+      <div class="sync-note"><span class="icon"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span><span>チェックを入れると、同じグループの授業枠すべてに変更が適用されます。</span></div>
+      <div class="link-blocks-section" id="twoCreditSection" style="margin-bottom: 1rem;">
+        <label class="link-block-check" style="width: 100%; justify-content: flex-start; padding: 0.8rem 1rem;">
+          <input type="checkbox" id="twoCreditCheck">
+          <span>2単位科目として適用する</span>
+        </label>
+      </div>
+      <label for="inputName">表示名</label>
+      <input type="text" id="inputName" placeholder="例：数学A" autocomplete="off">
+      <label for="inputURL">リンク URL</label>
+      <input type="url" id="inputURL" placeholder="https://classroom.google.com/..." autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn-reset" id="btnSubjReset">リセット</button>
+        <button class="btn-cancel" data-close="modalSubject">キャンセル</button>
+        <button class="btn-save" id="btnSubjSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Add/Edit Test Modal ===== -->
+  <div class="modal-overlay" id="modalTest">
+    <div class="modal">
+      <button class="modal-close" data-close="modalTest">&times;</button>
+      <h2 id="testModalTitle">テストを追加</h2>
+      <p class="modal-subtitle" id="testModalSub"></p>
+      <label for="testBlock">科目ブロック</label>
+      <select id="testBlock"></select>
+      <label for="testDate">テスト日</label>
+      <input type="date" id="testDate">
+      <label for="testUnit">単元・範囲</label>
+      <input type="text" id="testUnit" placeholder="例：第3章 微分" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn-cancel" data-close="modalTest">キャンセル</button>
+        <button class="btn-save" id="btnTestSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Add Bookmark Modal ===== -->
+  <div class="modal-overlay" id="modalBookmark">
+    <div class="modal">
+      <button class="modal-close" data-close="modalBookmark">&times;</button>
+      <h2>ブックマークを追加</h2>
+      <p class="modal-subtitle">よく使うサイトを登録できます</p>
+      <label for="bmTitle">タイトル</label>
+      <input type="text" id="bmTitle" placeholder="例：YouTube" autocomplete="off">
+      <label for="bmURL">URL</label>
+      <input type="url" id="bmURL" placeholder="https://www.youtube.com" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn-cancel" data-close="modalBookmark">キャンセル</button>
+        <button class="btn-save" id="btnBmSave">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Background Settings Modal ===== -->
+  <div class="modal-overlay" id="modalBgSettings">
+    <div class="modal">
+      <button class="modal-close" data-close="modalBgSettings">&times;</button>
+      <h2>全体設定</h2>
+      <p class="modal-subtitle">テーマカラーや背景画像を設定できます</p>
+      
+      <label for="themeColorPicker">テーマカラー（アクセント）</label>
+      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center;">
+        <input type="color" id="themeColorPicker" value="#ffffff" style="width: 50px; height: 50px; padding: 0; border-radius: 8px; cursor: pointer; border: none; background: none;">
+        <span style="font-size: 0.85rem; color: var(--text-muted);">時計や検索バーの枠色として使用されます</span>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <label>ダークモード（背景画像適用時）</label>
+        <label class="glass-switch">
+          <input type="checkbox" id="darkModeToggle">
+          <div class="glass-slider"></div>
+        </label>
+      </div>
+
+      <label>背景画像・動画（GIF / MP4等）</label>
+      <div class="bg-preview" id="bgPreview">プレビュー</div>
+      <button class="bg-upload-btn" id="bgUploadBtn">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        ファイルをアップロード
+      </button>
+      <input type="file" id="bgFileInput" accept="image/*,video/mp4,video/webm" style="display:none">
+      
+      <label for="glassOpacitySlider" style="margin-top: 1rem;">ガラスの濃淡（背景透過度）</label>
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <input type="range" id="glassOpacitySlider" min="0" max="1" step="0.05" value="0.08" style="flex: 1; cursor: pointer;">
+        <span id="glassOpacityVal" style="font-size: 0.85rem; color: var(--text-secondary); width: 2.5rem; text-align: right;">0.08</span>
+      </div>
+
+      <label for="clockFontSelect">時計のフォント</label>
+      <select id="clockFontSelect" style="margin-bottom: 1.5rem;">
+        <option value="inherit">システム標準</option>
+        <option value="serif">セリフ体（明朝系）</option>
+        <option value="monospace">モノスペース（等幅）</option>
+        <option value="cursive">筆記体風</option>
+      </select>
+
+      <label for="timeFormatSelect">時間の表示形式</label>
+      <select id="timeFormatSelect" style="margin-bottom: 1.5rem;">
+        <option value="24h-sec">24時間（秒あり）</option>
+        <option value="24h">24時間（秒なし）</option>
+        <option value="12h-sec">12時間（AM/PM 秒あり）</option>
+        <option value="12h">12時間（AM/PM 秒なし）</option>
+      </select>
+      
+      <hr style="border-color: var(--border-glass); margin: 1.5rem 0;">
+      <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-I);">クラウド同期 (Vercel + Supabase)</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        ユーザー名とパスワードを入力してログインすると、他のデバイスと時間割・設定を同期できます。（有効期限: 1週間）
+      </p>
+      
+      <div id="syncLoginSection">
+        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 0.5rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+        <button id="btnSyncLogin" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s;">ログイン / 登録</button>
+        <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
+      </div>
+      
+      <div id="syncActiveSection" style="display: none; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); padding: 1rem; border-radius: 8px;">
+        <p style="font-size: 0.9rem; color: #34d399; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#34d399;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          同期中 (<span id="syncActiveUsername" style="font-weight: bold;"></span>)
+        </p>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="btnSyncNow" style="flex: 1; padding: 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass); color: var(--text-primary); cursor: pointer; transition: background 0.2s;">今すぐ同期</button>
+          <button id="btnSyncLogout" style="flex: 1; padding: 0.5rem; border-radius: 6px; background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); color: #ff8888; cursor: pointer; transition: background 0.2s;">ログアウト</button>
+        </div>
+        <p id="syncStatusMsg" style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);"></p>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-reset" id="btnBgReset">リセット</button>
+        <button class="btn-cancel" data-close="modalBgSettings">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>

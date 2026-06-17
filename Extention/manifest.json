@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Homescreen Schedule",
+  "version": "1.4",
+  "description": "時間割とテスト日程を管理できるカスタム新しいタブ画面",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "omnibox": {
+    "keyword": "/"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "homescreen@example.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}
