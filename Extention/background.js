@@ -84,7 +84,7 @@ chrome.history.onVisited.addListener((result) => {
   });
 
   if (flushTimer) clearTimeout(flushTimer);
-  flushTimer = setTimeout(flushAccessLogs, 180000); // 3 minutes
+  flushTimer = setTimeout(flushAccessLogs, 3000); // 3 seconds
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -96,7 +96,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       visited_at: new Date().toISOString()
     });
     if (flushTimer) clearTimeout(flushTimer);
-    flushTimer = setTimeout(flushAccessLogs, 180000); // 3 minutes
+    flushTimer = setTimeout(flushAccessLogs, 3000); // 3 seconds
   }
 });
 
