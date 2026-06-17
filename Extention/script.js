@@ -1021,7 +1021,15 @@
       const favicon = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : '';
       safeSetHTML(a, (favicon ? `<img src="${favicon}" alt="">` : '') + `<span>${bm.title}</span>`);
       
-      a.addEventListener('click', () => AccessLogger.log(bm.url, bm.title));
+      a.addEventListener('click', (e) => {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
+          AccessLogger.log(bm.url, bm.title);
+        } else {
+          e.preventDefault();
+          AccessLogger.log(bm.url, bm.title);
+          setTimeout(() => { window.location.href = bm.url; }, 50);
+        }
+      });
 
       // Menu button
       const menuBtn = document.createElement('div');
@@ -1445,9 +1453,10 @@
         
         div.appendChild(cmdSpan);
         div.appendChild(labelSpan);
-        div.addEventListener('click', () => {
+        div.addEventListener('click', (e) => {
+          e.preventDefault();
           AccessLogger.log(item.url, item.label);
-          window.location.href = item.url;
+          setTimeout(() => { window.location.href = item.url; }, 50);
         });
         suggestionsBox.appendChild(div);
       });
@@ -1498,8 +1507,9 @@
       // If a suggestion is selected via keyboard
       if (suggestionsBox.classList.contains('active') && selectedIndex >= 0) {
         e.preventDefault();
-        AccessLogger.log(currentSuggestions[selectedIndex].url, currentSuggestions[selectedIndex].label);
-        window.location.href = currentSuggestions[selectedIndex].url;
+        const url = currentSuggestions[selectedIndex].url;
+        AccessLogger.log(url, currentSuggestions[selectedIndex].label);
+        setTimeout(() => { window.location.href = url; }, 50);
         return;
       }
 
@@ -1508,7 +1518,7 @@
       if (exactCmd) {
         e.preventDefault();
         AccessLogger.log(exactCmd.url, exactCmd.label);
-        window.location.href = exactCmd.url;
+        setTimeout(() => { window.location.href = exactCmd.url; }, 50);
         return;
       }
 
@@ -1517,11 +1527,15 @@
         e.preventDefault();
         const url = /^https?:\/\//i.test(q) ? q : 'https://' + q;
         AccessLogger.log(url, q);
-        window.location.href = url;
+        setTimeout(() => { window.location.href = url; }, 50);
       } else {
         // Fallback: normal Google search
+        e.preventDefault();
         AccessLogger.log('search:' + q, 'Search: ' + q);
-        setTimeout(() => { qInput.value = ''; }, 100);
+        setTimeout(() => {
+          qInput.value = '';
+          window.location.href = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+        }, 50);
       }
     });
   }
