@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Homescreen Schedule",
-  "version": "1.4",
+  "version": "1.5",
   "description": "時間割とテスト日程を管理できるカスタム新しいタブ画面",
   "chrome_url_overrides": {
     "newtab": "index.html"
