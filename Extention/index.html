@@ -90,14 +90,14 @@
     <!-- ===== TAB 2: Calendar ===== -->
     <div class="tab-content" id="tab-calendar">
       <div id="calendarAuthOverlay" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; text-align: center;">
-        <div style="background: var(--glass-bg); border: 1px solid var(--border-glass); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; backdrop-filter: blur(10px);">
+        <div class="auth-box">
           <h2 style="margin-bottom: 0.5rem; color: var(--color-I);">テスト日程</h2>
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
             この機能を利用するには、サインアップと管理者の承認が必要です。
           </p>
           <div id="calSyncLoginSection">
-            <input type="text" id="calSyncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-size: 1rem;">
-            <input type="password" id="calSyncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-size: 1rem;">
+            <input type="text" id="calSyncUsername" class="auth-input" placeholder="ユーザー名" autocomplete="off" style="margin-bottom: 1rem;">
+            <input type="password" id="calSyncPassword" class="auth-input" placeholder="パスワード" style="margin-bottom: 1.5rem;">
             <button id="btnCalSyncLogin" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s; font-size: 1rem;">ログイン / 登録</button>
             <p id="calSyncErrorMsg" style="color: #ff8888; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
             <p id="calSyncStatusMsg" style="color: #34d399; font-size: 0.9rem; margin-top: 1rem; display: none;"></p>
@@ -242,8 +242,8 @@
       </p>
 
       <div id="syncLoginSection">
-        <input type="text" id="syncUsername" placeholder="ユーザー名" autocomplete="off" style="width: 100%; margin-bottom: 0.5rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-        <input type="password" id="syncPassword" placeholder="パスワード" style="width: 100%; margin-bottom: 1rem; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+        <input type="text" id="syncUsername" class="auth-input" placeholder="ユーザー名" autocomplete="off" style="margin-bottom: 0.5rem; padding: 0.6rem; font-size: 0.95rem;">
+        <input type="password" id="syncPassword" class="auth-input" placeholder="パスワード" style="margin-bottom: 1rem; padding: 0.6rem; font-size: 0.95rem;">
         <button id="btnSyncLogin" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: linear-gradient(135deg, var(--color-I), var(--color-II)); color: #000; font-weight: bold; border: none; cursor: pointer; transition: filter 0.2s;">ログイン / 登録</button>
         <p id="syncErrorMsg" style="color: #ff8888; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>
         <p id="syncStatusMsg" style="color: #34d399; font-size: 0.85rem; margin-top: 0.5rem; display: none;"></p>

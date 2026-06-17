@@ -677,3 +677,48 @@
       .timetable thead th:first-child { width:clamp(30px, 12vmin, 85px); }
       .modal { padding:clamp(1rem, 4vmin, 1.5rem); }
     }
+
+    /* Custom Auth Form Styles for Calendar Overlay */
+    .auth-box {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+    }
+    body.has-bg-image.theme-dark .auth-box {
+      background: rgba(20, 20, 30, var(--glass-opacity-dark));
+    }
+    body.has-bg-image:not(.theme-dark) .auth-box {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0,0,0,0.1);
+      color: #1a1a2e;
+    }
+    
+    .auth-input {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-glass);
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1rem;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.25s ease;
+    }
+    .auth-input:focus {
+      border-color: rgba(110,198,255,0.5);
+      outline: none;
+    }
+    body.has-bg-image:not(.theme-dark) .auth-input {
+      background: rgba(0, 0, 0, 0.04);
+      color: #1a1a2e;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+    body.has-bg-image:not(.theme-dark) .auth-input::placeholder {
+      color: #666;
+    }
