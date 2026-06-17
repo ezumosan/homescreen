@@ -951,6 +951,7 @@
         ids.splice(toIdx, 0, dragSrcId);
         DB.reorderBookmarks(ids);
         renderBookmarks();
+        if (DB.syncToken) CloudSync.push().catch(console.error);
       });
 
       // Context menu (right click)
@@ -1001,6 +1002,7 @@
       closeBookmarkCtxMenu();
       DB.deleteBookmark(bm.id);
       renderBookmarks();
+      if (DB.syncToken) CloudSync.push().catch(console.error);
     });
     menu.appendChild(delBtn);
 
@@ -1029,6 +1031,7 @@
     }
     document.getElementById('modalBookmark').classList.remove('open');
     renderBookmarks();
+    if (DB.syncToken) CloudSync.push().catch(console.error);
   });
 
   // ============================================================
