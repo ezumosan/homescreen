@@ -10,8 +10,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
   "omnibox": {
     "keyword": "/"

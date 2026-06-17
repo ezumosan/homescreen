@@ -136,6 +136,7 @@
     logout() {
       DB.syncToken = null;
       DB.syncUsername = null;
+      if (typeof updateSyncUI === 'function') updateSyncUI();
     },
     async pull() {
       if (!DB.syncToken) return false;
