@@ -246,6 +246,7 @@
     body.has-bg-image .timetable-wrapper,
     body.has-bg-image .calendar-grid-wrapper,
     body.has-bg-image .tab-btn,
+    body.has-bg-image .cal-nav-btn,
     body.has-bg-image .bookmark-item,
     body.has-bg-image .bookmark-add,
     body.has-bg-image .current-status,
@@ -263,11 +264,16 @@
       border-color: var(--accent-color);
       color: var(--accent-color);
     }
+    body.has-bg-image .cal-nav-btn:hover {
+      background: rgba(255, 255, 255, calc(var(--glass-opacity-light) + 0.08));
+      color: #ffffff;
+    }
     
     /* Dark Mode Glass */
     body.has-bg-image.theme-dark .timetable-wrapper,
     body.has-bg-image.theme-dark .calendar-grid-wrapper,
     body.has-bg-image.theme-dark .tab-btn,
+    body.has-bg-image.theme-dark .cal-nav-btn,
     body.has-bg-image.theme-dark .bookmark-item,
     body.has-bg-image.theme-dark .bookmark-add,
     body.has-bg-image.theme-dark .search-bar,
@@ -297,6 +303,9 @@
       background: rgba(20, 20, 30, calc(var(--glass-opacity-dark) + 0.25));
       border-color: var(--accent-color);
       color: var(--accent-color);
+    }
+    body.has-bg-image.theme-dark .cal-nav-btn:hover {
+      background: rgba(20, 20, 30, calc(var(--glass-opacity-dark) + 0.25));
     }
     body.has-bg-image .timetable thead th,
     body.has-bg-image .cal-day-header,
