@@ -61,7 +61,15 @@
     get syncUsername() { return localStorage.getItem('hs_sync_username') || null; },
     set syncUsername(v) { if (v) localStorage.setItem('hs_sync_username', v); else localStorage.removeItem('hs_sync_username'); },
     get syncToken() { return localStorage.getItem('hs_sync_token') || null; },
-    set syncToken(v) { if (v) localStorage.setItem('hs_sync_token', v); else localStorage.removeItem('hs_sync_token'); },
+    set syncToken(v) {
+      if (v) {
+        localStorage.setItem('hs_sync_token', v);
+        if (chrome.storage && chrome.storage.local) chrome.storage.local.set({ hs_sync_token: v });
+      } else {
+        localStorage.removeItem('hs_sync_token');
+        if (chrome.storage && chrome.storage.local) chrome.storage.local.remove('hs_sync_token');
+      }
+    },
 
     get names() { return this._get('hs_names'); },
     set names(v) { this._set('hs_names', v); },
@@ -1671,6 +1679,11 @@
   }
 
   updateSyncUI();
+
+  // Mirror existing token to chrome.storage.local for background.js access
+  if (DB.syncToken && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({ hs_sync_token: DB.syncToken });
+  }
 
   // Initial Bookmarks Pull on Load
   if (DB.syncToken) {
