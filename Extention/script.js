@@ -1526,7 +1526,14 @@
   if (DB.syncToken) {
     CloudSync.pull().then(updated => {
       if (updated) {
-        location.reload();
+        renderCalendar();
+        renderBookmarks();
+        applyBg();
+        applyTheme();
+        applyDarkMode();
+        applyFocusMode();
+        applyGlassOpacity();
+        applyClockFont();
       }
     }).catch(e => console.error("Auto pull failed", e));
   }
