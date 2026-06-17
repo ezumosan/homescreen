@@ -1412,12 +1412,21 @@
   }).then(bgData => {
     if (bgData) {
       const fileBlob = bgData.data || bgData;
-      if (bgData.type && bgData.type.startsWith('video/')) {
+      if (fileBlob instanceof Blob) {
         currentBgUrl = URL.createObjectURL(fileBlob);
-        DB.bg = 'video:' + currentBgUrl; // Flag to applyBg that it's a video
+        if (fileBlob.type && fileBlob.type.startsWith('video/')) {
+          DB.bg = 'video:' + currentBgUrl; // Flag to applyBg that it's a video
+        } else {
+          DB.bg = currentBgUrl;
+        }
       } else {
-        currentBgUrl = URL.createObjectURL(fileBlob);
-        DB.bg = currentBgUrl;
+        console.warn("bgData is not a Blob. Fallback handling.");
+        if (typeof fileBlob === 'string') {
+          currentBgUrl = fileBlob;
+          DB.bg = currentBgUrl;
+        } else {
+          IDB.deleteBg(); // Remove corrupted data
+        }
       }
     }
     applyBg();
