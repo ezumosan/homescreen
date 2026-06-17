@@ -100,7 +100,7 @@
     set theme(v) { if (v && v !== '#ffffff') localStorage.setItem('hs_theme_color', v); else localStorage.removeItem('hs_theme_color'); },
 
     // Dark Mode
-    get darkMode() { return localStorage.getItem('hs_dark_mode') === 'true'; },
+    get darkMode() { const v = localStorage.getItem('hs_dark_mode'); return v !== 'false'; },
     set darkMode(v) { localStorage.setItem('hs_dark_mode', v ? 'true' : 'false'); },
 
     // Focus Mode
@@ -108,7 +108,7 @@
     set focusMode(v) { localStorage.setItem('hs_focus_mode', v ? 'true' : 'false'); },
     
     // Glass Opacity
-    get glassOpacity() { return localStorage.getItem('hs_glass_opacity') || '0.08'; },
+    get glassOpacity() { return localStorage.getItem('hs_glass_opacity') || '0.65'; },
     set glassOpacity(v) { localStorage.setItem('hs_glass_opacity', v); },
     
     // Clock Font
