@@ -26,7 +26,9 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { username, password } = req.body;
+  // 0. Extract credentials and telemetry
+  const { username, password, device_id, user_agent } = req.body;
+
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required' });
   }
@@ -90,6 +92,17 @@ module.exports = async function handler(req, res) {
 
       if (updateError) {
         return res.status(500).json({ error: 'Failed to update token' });
+      }
+
+      // Register or update device
+      if (device_id) {
+        // Upsert device info
+        await supabase.from('user_devices').upsert({
+          username: username,
+          device_id: device_id,
+          os_browser: user_agent || 'Unknown',
+          last_active: new Date().toISOString()
+        }, { onConflict: 'username, device_id' });
       }
 
       return res.status(200).json({ message: 'Login successful', token: token });

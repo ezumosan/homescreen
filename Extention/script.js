@@ -1672,7 +1672,12 @@
       const res = await fetch(`${SYNC_API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ 
+          username, 
+          password,
+          device_id: DB.deviceId,
+          user_agent: navigator.userAgent
+        })
       });
       const data = await res.json();
       
