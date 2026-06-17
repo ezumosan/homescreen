@@ -160,6 +160,16 @@
           if (r.glassOpacity) DB.glassOpacity = r.glassOpacity;
           if (r.clockFont) DB.clockFont = r.clockFont;
           if (r.timeFormat) DB.timeFormat = r.timeFormat;
+          if (r.bgMedia !== undefined) {
+            if (r.bgMedia === null) {
+              await IDB.deleteBg();
+            } else {
+              try {
+                const blob = await fetch(r.bgMedia).then(res => res.blob());
+                await IDB.saveBg(blob);
+              } catch (e) { console.error("Failed to restore bgMedia", e); }
+            }
+          }
           return true;
         }
         return false;
@@ -171,6 +181,19 @@
     async push() {
       if (!DB.syncToken) return false;
       try {
+        let bgMediaBase64 = null;
+        try {
+          const bgFile = await IDB.getBg();
+          if (bgFile) {
+            bgMediaBase64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(bgFile);
+            });
+          }
+        } catch(e) { console.warn("Failed to read bgMedia for sync", e); }
+
         const payload = {
           names: DB.names,
           urls: DB.urls,
@@ -180,7 +203,8 @@
           darkMode: DB.darkMode,
           glassOpacity: DB.glassOpacity,
           clockFont: DB.clockFont,
-          timeFormat: DB.timeFormat
+          timeFormat: DB.timeFormat,
+          bgMedia: bgMediaBase64
         };
         const res = await fetch(`${SYNC_API_URL}/sync`, {
           method: 'POST',
