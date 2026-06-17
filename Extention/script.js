@@ -51,7 +51,7 @@
   // ============================================================
   //  DATABASE (localStorage) & SYNC API
   // ============================================================
-  const SYNC_API_URL = 'http://localhost:3000/api'; // Vercelデプロイ後に変更してください
+  const SYNC_API_URL = 'https://homescreen-gules.vercel.app/api';
 
   const DB = {
     _get(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } },
