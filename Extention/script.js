@@ -154,7 +154,6 @@
           if (r.names) DB.names = r.names;
           if (r.urls) DB.urls = r.urls;
           if (r.tests) DB.tests = r.tests;
-          if (r.bookmarks) DB.bookmarks = r.bookmarks;
           if (r.theme) DB.theme = r.theme;
           if (r.darkMode !== undefined) DB.darkMode = r.darkMode;
           if (r.glassOpacity) DB.glassOpacity = r.glassOpacity;
@@ -198,7 +197,6 @@
           names: DB.names,
           urls: DB.urls,
           tests: DB.tests,
-          bookmarks: DB.bookmarks,
           theme: DB.theme,
           darkMode: DB.darkMode,
           glassOpacity: DB.glassOpacity,
@@ -222,6 +220,56 @@
         return true;
       } catch (err) {
         console.error("Cloud push error:", err);
+        return false;
+      }
+    }
+  };
+
+  const BookmarkSync = {
+    async pull() {
+      if (!DB.syncToken) return false;
+      try {
+        const res = await fetch(`${SYNC_API_URL}/bookmarks`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${DB.syncToken}` }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) CloudSync.logout();
+          throw new Error(data.error || 'Bookmark pull failed');
+        }
+        if (data.bookmarks && Array.isArray(data.bookmarks)) {
+          DB.bookmarks = data.bookmarks;
+          return true;
+        }
+        return false;
+      } catch (err) {
+        console.error("Bookmark pull error:", err);
+        return false;
+      }
+    },
+    async push() {
+      if (!DB.syncToken) return false;
+      try {
+        const payload = {
+          bookmarks: DB.bookmarks
+        };
+        const res = await fetch(`${SYNC_API_URL}/bookmarks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DB.syncToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) CloudSync.logout();
+          throw new Error(data.error || 'Bookmark push failed');
+        }
+        return true;
+      } catch (err) {
+        console.error("Bookmark push error:", err);
         return false;
       }
     }
@@ -951,7 +999,7 @@
         ids.splice(toIdx, 0, dragSrcId);
         DB.reorderBookmarks(ids);
         renderBookmarks();
-        if (DB.syncToken) CloudSync.push().catch(console.error);
+        if (DB.syncToken) BookmarkSync.push().catch(console.error);
       });
 
       // Context menu (right click)
@@ -1002,7 +1050,7 @@
       closeBookmarkCtxMenu();
       DB.deleteBookmark(bm.id);
       renderBookmarks();
-      if (DB.syncToken) CloudSync.push().catch(console.error);
+      if (DB.syncToken) BookmarkSync.push().catch(console.error);
     });
     menu.appendChild(delBtn);
 
@@ -1031,7 +1079,7 @@
     }
     document.getElementById('modalBookmark').classList.remove('open');
     renderBookmarks();
-    if (DB.syncToken) CloudSync.push().catch(console.error);
+    if (DB.syncToken) BookmarkSync.push().catch(console.error);
   });
 
   // ============================================================
@@ -1545,7 +1593,8 @@
         
         syncStatusMsgMain.textContent = '初回データを取得中...';
         const updated = await CloudSync.pull();
-        if (updated) {
+        const bmUpdated = await BookmarkSync.pull();
+        if (updated || bmUpdated) {
           location.reload();
         } else {
           syncStatusMsgMain.textContent = 'ログインしました！(初回)';
@@ -1587,6 +1636,7 @@
       syncStatusMsgMain.textContent = '';
       try {
         await CloudSync.push();
+        await BookmarkSync.push();
         syncStatusMsgMain.textContent = '✅ クラウドに保存しました！(' + new Date().toLocaleTimeString() + ')';
       } catch (err) {
         syncStatusMsgMain.textContent = '❌ 保存失敗: ' + err.message;
@@ -1604,7 +1654,8 @@
       syncStatusMsgMain.textContent = '';
       try {
         const updated = await CloudSync.pull();
-        if (updated) {
+        const bmUpdated = await BookmarkSync.pull();
+        if (updated || bmUpdated) {
           syncStatusMsgMain.textContent = '✅ クラウドから反映しました！ページを更新します...';
           setTimeout(() => location.reload(), 1000);
         } else {
@@ -1620,6 +1671,15 @@
   }
 
   updateSyncUI();
+
+  // Initial Bookmarks Pull on Load
+  if (DB.syncToken) {
+    BookmarkSync.pull().then(updated => {
+      if (updated) {
+        renderBookmarks();
+      }
+    }).catch(e => console.error("Auto pull failed", e));
+  }
 
   renderCalendar();
   renderBookmarks();
