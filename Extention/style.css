@@ -526,7 +526,7 @@
     .cal-day.other-month .cal-test-tag { opacity:0.6; }
     .cal-day.today { border-color:rgba(110,198,255,0.4);background:rgba(110,198,255,0.06); }
     .cal-day-num {
-      font-size:clamp(0.5rem, 2vmin, 0.85rem);font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem;
+      font-size:clamp(0.5rem, 2vmin, 0.85rem);font-weight:600;opacity:0.85;margin-bottom:0.2rem;
     }
     .cal-day.today .cal-day-num { color:#6ec6ff; }
     .cal-test-tag {
