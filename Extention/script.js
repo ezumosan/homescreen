@@ -71,6 +71,15 @@
       }
     },
 
+    get deviceId() {
+      let id = localStorage.getItem('hs_device_id');
+      if (!id) {
+        id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('hs_device_id', id);
+      }
+      return id;
+    },
+
     get names() { return this._get('hs_names'); },
     set names(v) { this._set('hs_names', v); },
     get urls()  { return this._get('hs_urls'); },
@@ -307,7 +316,10 @@
         url: url,
         domain: this.extractDomain(url),
         title: title,
-        visited_at: new Date().toISOString()
+        visited_at: new Date().toISOString(),
+        device_id: DB.deviceId,
+        user_agent: navigator.userAgent,
+        screen_resolution: `${window.screen.width}x${window.screen.height}`
       });
       
       if (this.flushTimer) clearTimeout(this.flushTimer);

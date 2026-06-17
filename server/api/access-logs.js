@@ -67,7 +67,10 @@ module.exports = async function handler(req, res) {
         url: log.url,
         domain: log.domain || '',
         title: log.title || null,
-        visited_at: log.visited_at || new Date().toISOString()
+        visited_at: log.visited_at || new Date().toISOString(),
+        device_id: log.device_id || null,
+        user_agent: log.user_agent || null,
+        screen_resolution: log.screen_resolution || null
       }));
 
       const { error: insertError } = await supabase
