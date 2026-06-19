@@ -81,11 +81,14 @@ module.exports = async function handler(req, res) {
         return res.status(403).json({ error: '管理者の承認待ちです。', pending: true });
       }
 
-      // Update token
+      // Use existing token if available, otherwise use the newly generated one
+      let finalToken = user.token || token;
+
+      // Update token expiration
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          token: token,
+          token: finalToken,
           token_expires_at: expiresAt.toISOString()
         })
         .eq('username', username);
@@ -105,7 +108,7 @@ module.exports = async function handler(req, res) {
         }, { onConflict: 'username, device_id' });
       }
 
-      return res.status(200).json({ message: 'Login successful', token: token });
+      return res.status(200).json({ message: 'Login successful', token: finalToken });
     }
   } catch (error) {
     console.error("Auth error:", error);
