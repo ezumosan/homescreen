@@ -23,16 +23,18 @@ module.exports = async function handler(req, res) {
 
   // POST: 勉強時間の保存
   if (req.method === 'POST') {
-    const { username, duration_seconds } = req.body;
+    const { session_id, username, duration_seconds, is_active } = req.body;
 
-    if (!username || !duration_seconds) {
-      return res.status(400).json({ error: 'Missing username or duration_seconds' });
+    if (!session_id || !username || typeof duration_seconds !== 'number') {
+      return res.status(400).json({ error: 'Missing session_id, username or duration_seconds' });
     }
+
+    const isActiveFlag = is_active !== undefined ? is_active : true;
 
     const { data, error } = await supabase
       .from('study_sessions')
-      .insert([
-        { username, duration_seconds }
+      .upsert([
+        { id: session_id, username, duration_seconds, is_active: isActiveFlag }
       ]);
 
     if (error) {
