@@ -59,7 +59,8 @@ module.exports = async function handler(req, res) {
           token: token,
           token_expires_at: expiresAt.toISOString(),
           data: {}, // empty JSON
-          is_approved: false
+          is_approved: false,
+          hide_ads: false
         }])
         .select()
         .single();
@@ -108,7 +109,11 @@ module.exports = async function handler(req, res) {
         }, { onConflict: 'username, device_id' });
       }
 
-      return res.status(200).json({ message: 'Login successful', token: finalToken });
+      return res.status(200).json({ 
+        message: 'Login successful', 
+        token: finalToken,
+        hide_ads: user.hide_ads || false
+      });
     }
   } catch (error) {
     console.error("Auth error:", error);

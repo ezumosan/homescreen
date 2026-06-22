@@ -67,7 +67,10 @@ module.exports = async function handler(req, res) {
         console.error("Token extension error:", updateError);
       }
 
-      return res.status(200).json({ data: user.data || {} });
+      return res.status(200).json({ 
+        data: user.data || {},
+        hide_ads: user.hide_ads || false
+      });
       
     } else if (req.method === 'POST') {
       // PUSH request
