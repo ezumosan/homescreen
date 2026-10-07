@@ -121,44 +121,85 @@ function stringSet(value) {
   return new Set(Array.isArray(value) ? value.filter(item => typeof item === 'string') : []);
 }
 
+function asSeconds(value, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value > 100000000000 ? value / 1000 : value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return parsed / 1000;
+  }
+  return fallback;
+}
+
+function recordMap(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : {};
+}
+
 function mergeSyncData(currentValue, incoming) {
   const current = currentValue && typeof currentValue === 'object' ? currentValue : {};
   const oldMeta = current._sync && typeof current._sync === 'object' ? current._sync : {};
   const meta = {
     deletedNames: stringSet(oldMeta.deletedNames),
     deletedURLs: stringSet(oldMeta.deletedURLs),
-    deletedTestIDs: stringSet(oldMeta.deletedTestIDs)
+    deletedTestIDs: stringSet(oldMeta.deletedTestIDs),
+    nameUpdatedAt: recordMap(oldMeta.nameUpdatedAt),
+    urlUpdatedAt: recordMap(oldMeta.urlUpdatedAt),
+    deletedNameAt: recordMap(oldMeta.deletedNameAt),
+    deletedURLAt: recordMap(oldMeta.deletedURLAt)
   };
   const next = { ...current };
   const isModern = ['changedNames', 'changedURLs', 'changedTestIDs'].some(key => Array.isArray(incoming[key]));
 
-  const mergeMap = (field, changedField, deleteField, tombstones) => {
+  const mergeMap = (field, changedField, deleteField, valueVersionField, deleteVersionField, valueVersions, deleteVersions, tombstones) => {
     const oldMap = current[field] && typeof current[field] === 'object' ? current[field] : {};
     const incomingMap = incoming[field] && typeof incoming[field] === 'object' ? incoming[field] : {};
     const result = { ...oldMap };
+    const now = Date.now() / 1000;
+    for (const key of tombstones) if (deleteVersions[key] === undefined) deleteVersions[key] = 0;
+
     for (const key of stringSet(incoming[deleteField])) {
-      delete result[key];
-      tombstones.add(key);
+      const version = asSeconds(incoming[deleteVersionField]?.[key], now);
+      const currentVersion = asSeconds(valueVersions[key], -1);
+      const currentDeleteVersion = asSeconds(deleteVersions[key], -1);
+      if (version >= currentVersion && version >= currentDeleteVersion) {
+        delete result[key];
+        deleteVersions[key] = version;
+        tombstones.add(key);
+      }
     }
     if (isModern) {
       for (const key of stringSet(incoming[changedField])) {
         if (Object.prototype.hasOwnProperty.call(incomingMap, key)) {
-          result[key] = incomingMap[key];
-          tombstones.delete(key);
+          const version = asSeconds(incoming[valueVersionField]?.[key], now);
+          const currentVersion = asSeconds(valueVersions[key], -1);
+          const currentDeleteVersion = asSeconds(deleteVersions[key], -1);
+          // An equal version keeps the current value; clients use the same
+          // rule so repeated pushes converge instead of alternating values.
+          if (version > currentVersion && version > currentDeleteVersion) {
+            result[key] = incomingMap[key];
+            valueVersions[key] = version;
+            delete deleteVersions[key];
+            tombstones.delete(key);
+          }
         }
       }
     } else {
       // Legacy clients cannot distinguish edits from stale cached values.
       for (const [key, value] of Object.entries(incomingMap)) {
-        if (!Object.prototype.hasOwnProperty.call(result, key) && !tombstones.has(key)) result[key] = value;
+        if (!Object.prototype.hasOwnProperty.call(result, key) && !tombstones.has(key)) {
+          result[key] = value;
+          valueVersions[key] = now;
+        }
       }
     }
-    for (const key of tombstones) delete result[key];
+    for (const key of tombstones) {
+      if (asSeconds(deleteVersions[key], 0) >= asSeconds(valueVersions[key], -1)) delete result[key];
+      else tombstones.delete(key);
+    }
     next[field] = result;
   };
 
-  mergeMap('names', 'changedNames', 'deletedNames', meta.deletedNames);
-  mergeMap('urls', 'changedURLs', 'deletedURLs', meta.deletedURLs);
+  mergeMap('names', 'changedNames', 'deletedNames', 'nameUpdatedAt', 'deletedNameAt', meta.nameUpdatedAt, meta.deletedNameAt, meta.deletedNames);
+  mergeMap('urls', 'changedURLs', 'deletedURLs', 'urlUpdatedAt', 'deletedURLAt', meta.urlUpdatedAt, meta.deletedURLAt, meta.deletedURLs);
 
   const oldTests = Array.isArray(current.tests) ? current.tests : [];
   const incomingTests = Array.isArray(incoming.tests) ? incoming.tests : [];
@@ -189,7 +230,11 @@ function mergeSyncData(currentValue, incoming) {
   next._sync = {
     deletedNames: Array.from(meta.deletedNames),
     deletedURLs: Array.from(meta.deletedURLs),
-    deletedTestIDs: Array.from(meta.deletedTestIDs)
+    deletedTestIDs: Array.from(meta.deletedTestIDs),
+    nameUpdatedAt: meta.nameUpdatedAt,
+    urlUpdatedAt: meta.urlUpdatedAt,
+    deletedNameAt: meta.deletedNameAt,
+    deletedURLAt: meta.deletedURLAt
   };
   return next;
 }
@@ -202,6 +247,10 @@ function publicSyncResponse(data) {
     data: cleanData,
     deletedNames: Array.isArray(meta.deletedNames) ? meta.deletedNames : [],
     deletedURLs: Array.isArray(meta.deletedURLs) ? meta.deletedURLs : [],
-    deletedTestIDs: Array.isArray(meta.deletedTestIDs) ? meta.deletedTestIDs : []
+    deletedTestIDs: Array.isArray(meta.deletedTestIDs) ? meta.deletedTestIDs : [],
+    nameUpdatedAt: recordMap(meta.nameUpdatedAt),
+    urlUpdatedAt: recordMap(meta.urlUpdatedAt),
+    deletedNameAt: recordMap(meta.deletedNameAt),
+    deletedURLAt: recordMap(meta.deletedURLAt)
   };
 }
