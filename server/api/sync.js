@@ -68,28 +68,45 @@ module.exports = async function handler(req, res) {
       }
 
       return res.status(200).json({ 
-        data: user.data || {},
+        ...publicSyncResponse(user.data || {}),
         hide_ads: user.hide_ads || false
       });
       
     } else if (req.method === 'POST') {
-      // PUSH request
-      const syncData = req.body;
-      
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          data: syncData,
-          token_expires_at: newExpiresAt.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('token', token);
+      const body = req.body && typeof req.body === 'object' ? req.body : {};
+      let savedData = null;
+      let savedVersion = null;
 
-      if (updateError) {
-        return res.status(500).json({ error: 'Failed to sync data' });
+      // Merge against the latest row and compare-and-swap it. Replacing the
+      // whole JSON column let a stale phone overwrite newer Mac data.
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const { data: latest, error: latestError } = await supabase
+          .from('users')
+          .select('data,updated_at')
+          .eq('token', token)
+          .single();
+        if (latestError || !latest) throw latestError || new Error('User row missing');
+
+        const merged = mergeSyncData(latest.data || {}, body);
+        const priorMillis = latest.updated_at ? new Date(latest.updated_at).getTime() : 0;
+        const nextVersion = new Date(Math.max(Date.now(), priorMillis + 1)).toISOString();
+        let update = supabase.from('users').update({
+          data: merged,
+          token_expires_at: newExpiresAt.toISOString(),
+          updated_at: nextVersion
+        }).eq('token', token);
+        update = latest.updated_at ? update.eq('updated_at', latest.updated_at) : update.is('updated_at', null);
+        const { data: updated, error: updateError } = await update.select('updated_at').maybeSingle();
+        if (updateError) throw updateError;
+        if (updated) {
+          savedData = merged;
+          savedVersion = updated.updated_at || nextVersion;
+          break;
+        }
       }
 
-      return res.status(200).json({ message: 'Data synced successfully' });
+      if (!savedData) return res.status(409).json({ error: 'Sync changed on another device. Please retry.' });
+      return res.status(200).json({ ...publicSyncResponse(savedData), updated_at: savedVersion, message: 'Data synced successfully' });
     } else {
       return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -98,4 +115,142 @@ module.exports = async function handler(req, res) {
     console.error("Sync error:", error);
     return res.status(500).json({ error: 'Internal server error' });
   }
+}
+
+function stringSet(value) {
+  return new Set(Array.isArray(value) ? value.filter(item => typeof item === 'string') : []);
+}
+
+function asSeconds(value, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value > 100000000000 ? value / 1000 : value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return parsed / 1000;
+  }
+  return fallback;
+}
+
+function recordMap(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : {};
+}
+
+function mergeSyncData(currentValue, incoming) {
+  const current = currentValue && typeof currentValue === 'object' ? currentValue : {};
+  const oldMeta = current._sync && typeof current._sync === 'object' ? current._sync : {};
+  const meta = {
+    deletedNames: stringSet(oldMeta.deletedNames),
+    deletedURLs: stringSet(oldMeta.deletedURLs),
+    deletedTestIDs: stringSet(oldMeta.deletedTestIDs),
+    nameUpdatedAt: recordMap(oldMeta.nameUpdatedAt),
+    urlUpdatedAt: recordMap(oldMeta.urlUpdatedAt),
+    deletedNameAt: recordMap(oldMeta.deletedNameAt),
+    deletedURLAt: recordMap(oldMeta.deletedURLAt)
+  };
+  const next = { ...current };
+  const isModern = ['changedNames', 'changedURLs', 'changedTestIDs'].some(key => Array.isArray(incoming[key]));
+
+  const mergeMap = (field, changedField, deleteField, valueVersionField, deleteVersionField, valueVersions, deleteVersions, tombstones) => {
+    const oldMap = current[field] && typeof current[field] === 'object' ? current[field] : {};
+    const incomingMap = incoming[field] && typeof incoming[field] === 'object' ? incoming[field] : {};
+    const result = { ...oldMap };
+    const now = Date.now() / 1000;
+    for (const key of tombstones) if (deleteVersions[key] === undefined) deleteVersions[key] = 0;
+
+    for (const key of stringSet(incoming[deleteField])) {
+      const version = asSeconds(incoming[deleteVersionField]?.[key], now);
+      const currentVersion = asSeconds(valueVersions[key], -1);
+      const currentDeleteVersion = asSeconds(deleteVersions[key], -1);
+      if (version >= currentVersion && version >= currentDeleteVersion) {
+        delete result[key];
+        deleteVersions[key] = version;
+        tombstones.add(key);
+      }
+    }
+    if (isModern) {
+      for (const key of stringSet(incoming[changedField])) {
+        if (Object.prototype.hasOwnProperty.call(incomingMap, key)) {
+          const version = asSeconds(incoming[valueVersionField]?.[key], now);
+          const currentVersion = asSeconds(valueVersions[key], -1);
+          const currentDeleteVersion = asSeconds(deleteVersions[key], -1);
+          // An equal version keeps the current value; clients use the same
+          // rule so repeated pushes converge instead of alternating values.
+          if (version > currentVersion && version > currentDeleteVersion) {
+            result[key] = incomingMap[key];
+            valueVersions[key] = version;
+            delete deleteVersions[key];
+            tombstones.delete(key);
+          }
+        }
+      }
+    } else {
+      // Legacy clients cannot distinguish edits from stale cached values.
+      for (const [key, value] of Object.entries(incomingMap)) {
+        if (!Object.prototype.hasOwnProperty.call(result, key) && !tombstones.has(key)) {
+          result[key] = value;
+          valueVersions[key] = now;
+        }
+      }
+    }
+    for (const key of tombstones) {
+      if (asSeconds(deleteVersions[key], 0) >= asSeconds(valueVersions[key], -1)) delete result[key];
+      else tombstones.delete(key);
+    }
+    next[field] = result;
+  };
+
+  mergeMap('names', 'changedNames', 'deletedNames', 'nameUpdatedAt', 'deletedNameAt', meta.nameUpdatedAt, meta.deletedNameAt, meta.deletedNames);
+  mergeMap('urls', 'changedURLs', 'deletedURLs', 'urlUpdatedAt', 'deletedURLAt', meta.urlUpdatedAt, meta.deletedURLAt, meta.deletedURLs);
+
+  const oldTests = Array.isArray(current.tests) ? current.tests : [];
+  const incomingTests = Array.isArray(incoming.tests) ? incoming.tests : [];
+  const tests = new Map(oldTests.filter(test => test && typeof test.id === 'string').map(test => [test.id, test]));
+  for (const id of stringSet(incoming.deletedTestIDs)) {
+    tests.delete(id);
+    meta.deletedTestIDs.add(id);
+  }
+  if (isModern) {
+    const changed = stringSet(incoming.changedTestIDs);
+    for (const test of incomingTests) {
+      if (test && typeof test.id === 'string' && changed.has(test.id)) {
+        tests.set(test.id, test);
+        meta.deletedTestIDs.delete(test.id);
+      }
+    }
+  } else {
+    for (const test of incomingTests) {
+      if (test && typeof test.id === 'string' && !tests.has(test.id) && !meta.deletedTestIDs.has(test.id)) tests.set(test.id, test);
+    }
+  }
+  for (const id of meta.deletedTestIDs) tests.delete(id);
+  next.tests = Array.from(tests.values());
+
+  for (const field of ['theme', 'darkMode']) {
+    if (Object.prototype.hasOwnProperty.call(incoming, field)) next[field] = incoming[field];
+  }
+  next._sync = {
+    deletedNames: Array.from(meta.deletedNames),
+    deletedURLs: Array.from(meta.deletedURLs),
+    deletedTestIDs: Array.from(meta.deletedTestIDs),
+    nameUpdatedAt: meta.nameUpdatedAt,
+    urlUpdatedAt: meta.urlUpdatedAt,
+    deletedNameAt: meta.deletedNameAt,
+    deletedURLAt: meta.deletedURLAt
+  };
+  return next;
+}
+
+function publicSyncResponse(data) {
+  const cleanData = { ...(data || {}) };
+  const meta = cleanData._sync && typeof cleanData._sync === 'object' ? cleanData._sync : {};
+  delete cleanData._sync;
+  return {
+    data: cleanData,
+    deletedNames: Array.isArray(meta.deletedNames) ? meta.deletedNames : [],
+    deletedURLs: Array.isArray(meta.deletedURLs) ? meta.deletedURLs : [],
+    deletedTestIDs: Array.isArray(meta.deletedTestIDs) ? meta.deletedTestIDs : [],
+    nameUpdatedAt: recordMap(meta.nameUpdatedAt),
+    urlUpdatedAt: recordMap(meta.urlUpdatedAt),
+    deletedNameAt: recordMap(meta.deletedNameAt),
+    deletedURLAt: recordMap(meta.deletedURLAt)
+  };
 }
